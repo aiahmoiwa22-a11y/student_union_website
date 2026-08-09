@@ -4,7 +4,7 @@
    ══════════════════════════════════════════════════ */
 
 const SUPABASE_URL = 'https://zroahleyhzfglzydwmdv.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_-nxL1CwAqShZi4gYM9avKA_kJ0PmMEh'; // ← paste your anon key
+const SUPABASE_KEY = 'sb_publishable_-nxL1CwAqShZi4gYM9avKA_kJ0PmMEh'; 
 const STORAGE_BUCKET = 'slsur-media';
 
 /* ══════════════════════════════════════════════════
@@ -23,22 +23,31 @@ const STORAGE_BUCKET = 'slsur-media';
    ══════════════════════════════════════════════════ */
 
 let db = null;
-let useMock = true;
+let useMock = false; // Set to false to disable mock mode
 
 function initSupabase() {
-  if (SUPABASE_KEY === 'sb_publishable_-nxL1CwAqShZi4gYM9avKA_kJ0PmMEh') {
-    console.warn('Using mock data — paste your anon key into admin.js');
-    useMock = true;
-    return;
-  }
+  if (db) return; 
+
+  
   try {
-    db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    useMock = false;
-  } catch(e) {
+    const SUPABASE_URL = 'https://zroahleyhzfglzydwmdv.supabase.co'; 
+    const SUPABASE_KEY = 'sb_publishable_-nxL1CwAqShZi4gYM9avKA_kJ0PmMEh'; 
+    if (typeof supabase !== 'undefined' && SUPABASE_URL && SUPABASE_KEY) {
+      db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      useMock = false;
+      console.log('Supabase connected successfully');
+    } else {
+      console.error('Supabase library or credentials missing');
+      useMock = true;
+    }
+  } catch (e) {
     console.warn('Supabase init failed:', e);
     useMock = true;
   }
 }
+
+// Call initialization immediately
+initSupabase();
 
 /* ── Mock data matching your schema ── */
 const MOCK = {
@@ -190,56 +199,57 @@ function setPickerStatus(inputId, type, msg) {
    ══════════════════════════════════════════════════ */
 async function login() {
   const email = document.getElementById("loginEmail").value.trim();
-  const pass  = document.getElementById("loginPassword").value;
-  const btn   = document.getElementById("loginBtn");
+  const pass = document.getElementById("loginPassword").value;
+  const btn = document.getElementById("loginBtn");
 
-  if (!email || !pass) { showLoginError("Please fill in both fields."); return; }
+  if (!email || !pass) {
+    showLoginError("Please fill in both fields.");
+    return;
+  }
 
-  btn.textContent = "Signing in…";
+  btn.textContent = "Signing in...";
   btn.disabled = true;
 
-  // Fallback demo mode if Supabase not configured
-  if (useMock) {
+  try {
+    const { data, error } = await db.auth.signInWithPassword({
+      email,
+      password: pass
+    });
+
+    if (error) {
+      showLoginError(error.message);
+      return;
+    }
+
+    // Successfully logged in
+    document.getElementById("loginError").classList.remove("show");
+    document.getElementById("loginScreen").classList.add("hidden");
+    document.getElementById("adminShell").classList.remove("hidden");
+
+    const nameEl = document.querySelector(".admin-name");
+    if (nameEl) {
+      nameEl.textContent = data.user?.email?.split("@")[0] || "Admin";
+    }
+
+    navigate("dashboard");
+  } catch (err) {
+    showLoginError("Connection error. Please check your Supabase configuration.");
+  } finally {
     btn.textContent = "Sign in →";
     btn.disabled = false;
-    if (pass === "admin") {
-      document.getElementById("loginError").classList.remove("show");
-      document.getElementById("loginScreen").classList.add("hidden");
-      document.getElementById("adminShell").classList.remove("hidden");
-      navigate("dashboard");
-    } else {
-      showLoginError("Supabase not connected yet. Demo password: admin");
-    }
-    return;
   }
-
-  // Real Supabase authentication
-  const { data, error } = await db.auth.signInWithPassword({ email, password: pass });
-
-  btn.textContent = "Sign in →";
-  btn.disabled = false;
-
-  if (error) {
-    showLoginError("Wrong email or password. Please try again.");
-    return;
-  }
-
-  // Success
-  document.getElementById("loginError").classList.remove("show");
-  document.getElementById("loginScreen").classList.add("hidden");
-  document.getElementById("adminShell").classList.remove("hidden");
-
-  const nameEl = document.querySelector(".admin-name");
-  if (nameEl) nameEl.textContent = data.user?.email?.split("@")[0] || "Admin";
-
-  navigate("dashboard");
 }
+
+
+// Login Error Handler 
 
 function showLoginError(msg) {
-  const el = document.getElementById('loginError');
-  el.textContent = msg; el.classList.add('show');
+  const errEl = document.getElementById("loginError");
+  if (errEl) {
+    errEl.textContent = msg;
+    errEl.classList.add("show");
+  }
 }
-
 /* ══════════════════════════════════════════════════
    NAVIGATION
    ══════════════════════════════════════════════════ */
@@ -690,9 +700,10 @@ async function saveGallery(id) {
 }
 
 /* ══════════════════════════════════════════════════
-   RESOURCES
+   RESOURCES 
    Schema: title, category, file_url
    ══════════════════════════════════════════════════ */
+
 async function renderResources() {
   const { data } = await dbSelect('resources');
 
@@ -760,6 +771,7 @@ async function saveResource(id) {
   if (error) { showToast('Error: '+error.message,'error'); console.error(error); return; }
   closeModal(); showToast(id?'Resource updated ✓':'Resource added ✓','success'); renderResources();
 }
+
 
 /* ══════════════════════════════════════════════════
    MESSAGES
