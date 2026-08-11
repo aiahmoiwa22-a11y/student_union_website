@@ -1,0 +1,6 @@
+*.download
+Policies_Database_*
+.env
+.env.local
+.DS_Store
+Thumbs.db
