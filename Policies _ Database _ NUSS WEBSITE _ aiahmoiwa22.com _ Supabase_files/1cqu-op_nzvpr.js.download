@@ -1,0 +1,438 @@
+;!function(){try { var e="undefined"!=typeof globalThis?globalThis:"undefined"!=typeof global?global:"undefined"!=typeof window?window:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&((e._debugIds|| (e._debugIds={}))[n]="c25ad7a0-9369-7630-c903-f126804d9ca8")}catch(e){}}();
+(globalThis.TURBOPACK||(globalThis.TURBOPACK=[])).push(["object"==typeof document?document.currentScript:void 0,820308,775159,e=>{"use strict";e.i(850036);var t,s,a=e.i(479084),r=e.i(55956),n=((t={}).API="api",t.STORAGE="storage",t.AUTH="auth",t.QUERY_PERFORMANCE="query_performance",t.DATABASE="database",t);e.s(["Presets",()=>n],775159);var o=e.i(562616),i=((s={}).LAST_10_MINUTES="Last 10 minutes",s.LAST_30_MINUTES="Last 30 minutes",s.LAST_60_MINUTES="Last 60 minutes",s.LAST_3_HOURS="Last 3 hours",s.LAST_24_HOURS="Last 24 hours",s.LAST_7_DAYS="Last 7 days",s.LAST_14_DAYS="Last 14 days",s.LAST_28_DAYS="Last 28 days",s);let _=[{text:"Last 10 minutes",calcFrom:()=>(0,r.default)().subtract(10,"minute").toISOString(),calcTo:()=>(0,r.default)().toISOString(),availableIn:["free","pro","team","enterprise","platform"]},{text:"Last 30 minutes",calcFrom:()=>(0,r.default)().subtract(30,"minute").toISOString(),calcTo:()=>(0,r.default)().toISOString(),availableIn:["free","pro","team","enterprise","platform"]},{text:"Last 60 minutes",calcFrom:()=>(0,r.default)().subtract(1,"hour").toISOString(),calcTo:()=>(0,r.default)().toISOString(),default:!0,availableIn:["free","pro","team","enterprise","platform"]},{text:"Last 3 hours",calcFrom:()=>(0,r.default)().subtract(3,"hour").toISOString(),calcTo:()=>(0,r.default)().toISOString(),availableIn:["free","pro","team","enterprise","platform"]},{text:"Last 24 hours",calcFrom:()=>(0,r.default)().subtract(1,"day").toISOString(),calcTo:()=>(0,r.default)().toISOString(),availableIn:["free","pro","team","enterprise","platform"]},{text:"Last 7 days",calcFrom:()=>(0,r.default)().subtract(7,"day").toISOString(),calcTo:()=>(0,r.default)().toISOString(),availableIn:["pro","team","enterprise"]},{text:"Last 14 days",calcFrom:()=>(0,r.default)().subtract(14,"day").toISOString(),calcTo:()=>(0,r.default)().toISOString(),availableIn:["team","enterprise"]},{text:"Last 28 days",calcFrom:()=>(0,r.default)().subtract(28,"day").toISOString(),calcTo:()=>(0,r.default)().toISOString(),availableIn:["team","enterprise"]}],l={iso_timestamp_start:_[0].calcFrom(),iso_timestamp_end:_[0].calcTo()};function E(e){return e.replace(/^WHERE/,"AND")}function u(e,t=!0){if(0===e.length)return o.safeSql``;let s=e.map(e=>{let t,s=e.key.split("."),a=[s[s.length-2],s[s.length-1]].join("."),r=e.key.includes(".")?a:e.key;try{t=(0,o.quotedIdent)(r)}catch{return null}let n=isNaN(Number(e.value))?(0,o.analyticsLiteral)(String(e.value)):(0,o.analyticsLiteral)(Number(e.value));switch(e.compare){case"matches":return o.safeSql`REGEXP_CONTAINS(${t}, ${n})`;case"is":default:return o.safeSql`${t} = ${n}`;case"!=":return o.safeSql`${t} != ${n}`;case">=":return o.safeSql`${t} >= ${n}`;case"<=":return o.safeSql`${t} <= ${n}`;case">":return o.safeSql`${t} > ${n}`;case"<":return o.safeSql`${t} < ${n}`}}).filter(e=>null!==e);if(0===s.length)return o.safeSql``;let a=(0,o.joinSqlFragments)(s," AND ");return t?o.safeSql`WHERE ${a}`:o.safeSql`AND ${a}`}let c={[n.API]:{title:"API",queries:{totalRequests:{queryType:"logs",safeSql:e=>o.safeSql`
+        -- reports-api-total-requests
+        select
+          cast(timestamp_trunc(t.timestamp, hour) as datetime) as timestamp,
+          count(t.id) as count
+        FROM edge_logs t
+          cross join unnest(metadata) as m
+          cross join unnest(m.response) as response
+          cross join unnest(m.request) as request
+          cross join unnest(request.headers) as headers
+          ${u(e)}
+        GROUP BY
+          timestamp
+        ORDER BY
+          timestamp ASC`},topRoutes:{queryType:"logs",safeSql:e=>o.safeSql`
+        -- reports-api-top-routes
+        select
+          request.path as path,
+          request.method as method,
+          request.search as search,
+          response.status_code as status_code,
+          count(t.id) as count
+        from edge_logs t
+          cross join unnest(metadata) as m
+          cross join unnest(m.response) as response
+          cross join unnest(m.request) as request
+          cross join unnest(request.headers) as headers
+          ${u(e)}
+        group by
+          request.path, request.method, request.search, response.status_code
+        order by
+          count desc
+        limit 10
+        `},errorCounts:{queryType:"logs",safeSql:e=>o.safeSql`
+        -- reports-api-error-counts
+        select
+          cast(timestamp_trunc(t.timestamp, hour) as datetime) as timestamp,
+          count(t.id) as count
+        FROM edge_logs t
+          cross join unnest(metadata) as m
+          cross join unnest(m.response) as response
+          cross join unnest(m.request) as request
+          cross join unnest(request.headers) as headers
+        WHERE
+          response.status_code >= 400
+        ${u(e,!1)}
+        GROUP BY
+          timestamp
+        ORDER BY
+          timestamp ASC
+        `},topErrorRoutes:{queryType:"logs",safeSql:e=>o.safeSql`
+        -- reports-api-top-error-routes
+        select
+          request.path as path,
+          request.method as method,
+          request.search as search,
+          response.status_code as status_code,
+          count(t.id) as count
+        from edge_logs t
+          cross join unnest(metadata) as m
+          cross join unnest(m.response) as response
+          cross join unnest(m.request) as request
+          cross join unnest(request.headers) as headers
+        where
+          response.status_code >= 400
+        ${u(e,!1)}
+        group by
+          request.path, request.method, request.search, response.status_code
+        order by
+          count desc
+        limit 10
+        `},responseSpeed:{queryType:"logs",safeSql:e=>o.safeSql`
+        -- reports-api-response-speed
+        select
+          cast(timestamp_trunc(t.timestamp, hour) as datetime) as timestamp,
+          avg(response.origin_time) as avg
+        FROM
+          edge_logs t
+          cross join unnest(metadata) as m
+          cross join unnest(m.response) as response
+          cross join unnest(m.request) as request
+          cross join unnest(request.headers) as headers
+          ${u(e)}
+        GROUP BY
+          timestamp
+        ORDER BY
+          timestamp ASC
+      `},topSlowRoutes:{queryType:"logs",safeSql:e=>o.safeSql`
+        -- reports-api-top-slow-routes
+        select
+          request.path as path,
+          request.method as method,
+          request.search as search,
+          response.status_code as status_code,
+          count(t.id) as count,
+          avg(response.origin_time) as avg
+        from edge_logs t
+          cross join unnest(metadata) as m
+          cross join unnest(m.response) as response
+          cross join unnest(m.request) as request
+          cross join unnest(request.headers) as headers
+        ${u(e)}
+        group by
+          request.path, request.method, request.search, response.status_code
+        order by
+          avg desc
+        limit 10
+        `},networkTraffic:{queryType:"logs",safeSql:e=>o.safeSql`
+        -- reports-api-network-traffic
+        select
+          cast(timestamp_trunc(t.timestamp, hour) as datetime) as timestamp,
+          coalesce(
+            safe_divide(
+              sum(
+                cast(coalesce(headers.content_length, "0") as int64)
+              ),
+              1000000
+            ),
+            0
+          ) as ingress_mb,
+          coalesce(
+            safe_divide(
+              sum(
+                cast(coalesce(resp_headers.content_length, "0") as int64)
+              ),
+              1000000
+            ),
+            0
+          ) as egress_mb,
+        FROM
+          edge_logs t
+          cross join unnest(metadata) as m
+          cross join unnest(m.response) as response
+          cross join unnest(m.request) as request
+          cross join unnest(request.headers) as headers
+          cross join unnest(response.headers) as resp_headers
+          ${u(e)}
+        GROUP BY
+          timestamp
+        ORDER BY
+          timestamp ASC
+        `},requestsByCountry:{queryType:"logs",safeSql:e=>o.safeSql`
+        -- reports-api-requests-by-country
+        select
+          cf.country as country,
+          count(t.id) as count
+        from edge_logs t
+          cross join unnest(metadata) as m
+          cross join unnest(m.response) as response
+          cross join unnest(m.request) as request
+          cross join unnest(request.headers) as headers
+          cross join unnest(request.cf) as cf
+        where
+          cf.country is not null
+        ${u(e,!1)}
+        group by
+          cf.country
+        `}}},[n.AUTH]:{title:"",queries:{}},[n.STORAGE]:{title:"Storage",queries:{cacheHitRate:{queryType:"logs",safeSql:e=>o.safeSql`
+        -- reports-storage-cache-hit-rate
+SELECT
+  timestamp_trunc(timestamp, hour) as timestamp,
+  countif( h.cf_cache_status in ('HIT', 'STALE', 'REVALIDATED', 'UPDATING') ) as hit_count,
+  countif( h.cf_cache_status in ('MISS', 'NONE/UNKNOWN', 'EXPIRED', 'BYPASS', 'DYNAMIC') ) as miss_count
+from edge_logs f
+  cross join unnest(f.metadata) as m
+  cross join unnest(m.request) as r
+  cross join unnest(m.response) as res
+  cross join unnest(res.headers) as h
+where starts_with(r.path, '/storage/v1/object') and r.method = 'GET'
+  ${u(e,!1)}
+group by timestamp
+order by timestamp desc
+`},topCacheMisses:{queryType:"logs",safeSql:e=>o.safeSql`
+        -- reports-storage-top-cache-misses
+SELECT
+  r.path as path,
+  r.search as search,
+  count(id) as count
+from edge_logs f
+  cross join unnest(f.metadata) as m
+  cross join unnest(m.request) as r
+  cross join unnest(m.response) as res
+  cross join unnest(res.headers) as h
+where starts_with(r.path, '/storage/v1/object')
+  and r.method = 'GET'
+  and h.cf_cache_status in ('MISS', 'NONE/UNKNOWN', 'EXPIRED', 'BYPASS', 'DYNAMIC')
+  ${u(e,!1)}
+group by path, search
+order by count desc
+limit 12
+    `}}},[n.QUERY_PERFORMANCE]:{title:"Query performance",queries:{mostFrequentlyInvoked:{queryType:"db",safeSql:(e,t,s,r=!1,n=!1)=>a.safeSql`
+        -- reports-query-performance-most-frequently-invoked
+set search_path to public, extensions;
+
+select
+    auth.rolname,
+    statements.query,
+    statements.calls,
+    -- -- Postgres 13, 14, 15
+    statements.total_exec_time + statements.total_plan_time as total_time,
+    statements.min_exec_time + statements.min_plan_time as min_time,
+    statements.max_exec_time + statements.max_plan_time as max_time,
+    statements.mean_exec_time + statements.mean_plan_time as mean_time,
+    -- -- Postgres <= 12
+    -- total_time,
+    -- min_time,
+    -- max_time,
+    -- mean_time,
+    coalesce(statements.rows::numeric / nullif(statements.calls, 0), 0) as avg_rows,
+    statements.rows as rows_read,
+    case
+      when (statements.shared_blks_hit + statements.shared_blks_read) > 0
+      then round(
+        (statements.shared_blks_hit * 100.0) /
+        (statements.shared_blks_hit + statements.shared_blks_read),
+        2
+      )
+      else 0
+    end as cache_hit_rate${r?a.safeSql`,
+    case
+      when (lower(statements.query) like 'select%' or lower(statements.query) like 'with pgrst%')
+      then (
+        select json_build_object(
+          'has_suggestion', array_length(index_statements, 1) > 0,
+          'startup_cost_before', startup_cost_before,
+          'startup_cost_after', startup_cost_after,
+          'total_cost_before', total_cost_before,
+          'total_cost_after', total_cost_after,
+          'index_statements', index_statements
+        )
+        from index_advisor(statements.query)
+      )
+      else null
+    end as index_advisor_result`:a.safeSql``}
+  from pg_stat_statements as statements
+    inner join pg_authid as auth on statements.userid = auth.oid
+  -- skip queries that were never actually executed
+  WHERE statements.calls > 0 ${t?E(t):a.safeSql``}
+  ${s||a.safeSql`order by statements.calls desc`}
+  limit 20`},mostTimeConsuming:{queryType:"db",safeSql:(e,t,s,r=!1,n=!1)=>a.safeSql`
+        -- reports-query-performance-most-time-consuming
+set search_path to public, extensions;
+
+-- compute total time once up front so we don't need a window function over all rows
+with grand_total as (
+  select coalesce(nullif(sum(total_exec_time + total_plan_time), 0), 1) as v
+  from pg_stat_statements where calls > 0
+)
+select
+    auth.rolname,
+    statements.query,
+    statements.calls,
+    statements.total_exec_time + statements.total_plan_time as total_time,
+    statements.mean_exec_time + statements.mean_plan_time as mean_time,
+    coalesce(
+      ((statements.total_exec_time + statements.total_plan_time) /
+        (select v from grand_total)) *
+        100,
+      0
+    ) as prop_total_time${r?a.safeSql`,
+    case
+      when (lower(statements.query) like 'select%' or lower(statements.query) like 'with pgrst%')
+      then (
+        select json_build_object(
+          'has_suggestion', array_length(index_statements, 1) > 0,
+          'startup_cost_before', startup_cost_before,
+          'startup_cost_after', startup_cost_after,
+          'total_cost_before', total_cost_before,
+          'total_cost_after', total_cost_after,
+          'index_statements', index_statements
+        )
+        from index_advisor(statements.query)
+      )
+      else null
+    end as index_advisor_result`:a.safeSql``}
+  from pg_stat_statements as statements
+    inner join pg_authid as auth on statements.userid = auth.oid
+  -- skip queries that were never actually executed
+  WHERE statements.calls > 0 ${t?E(t):a.safeSql``}
+  ${s||a.safeSql`order by total_time desc`}
+  limit 20`},slowestExecutionTime:{queryType:"db",safeSql:(e,t,s,r=!1,n=!1)=>a.safeSql`
+        -- reports-query-performance-slowest-execution-time
+set search_path to public, extensions;
+
+select
+    auth.rolname,
+    statements.query,
+    statements.calls,
+    -- -- Postgres 13, 14, 15
+    statements.total_exec_time + statements.total_plan_time as total_time,
+    statements.min_exec_time + statements.min_plan_time as min_time,
+    statements.max_exec_time + statements.max_plan_time as max_time,
+    statements.mean_exec_time + statements.mean_plan_time as mean_time,
+    -- -- Postgres <= 12
+    -- total_time,
+    -- min_time,
+    -- max_time,
+    -- mean_time,
+    coalesce(statements.rows::numeric / nullif(statements.calls, 0), 0) as avg_rows${r?a.safeSql`,
+    case
+      when (lower(statements.query) like 'select%' or lower(statements.query) like 'with pgrst%')
+      then (
+        select json_build_object(
+          'has_suggestion', array_length(index_statements, 1) > 0,
+          'startup_cost_before', startup_cost_before,
+          'startup_cost_after', startup_cost_after,
+          'total_cost_before', total_cost_before,
+          'total_cost_after', total_cost_after,
+          'index_statements', index_statements
+        )
+        from index_advisor(statements.query)
+      )
+      else null
+    end as index_advisor_result`:a.safeSql``}
+  from pg_stat_statements as statements
+    inner join pg_authid as auth on statements.userid = auth.oid
+  -- skip queries that were never actually executed
+  WHERE statements.calls > 0 ${t?E(t):a.safeSql``}
+  ${s||a.safeSql`order by max_time desc`}
+  limit 20`},queryHitRate:{queryType:"db",safeSql:e=>a.safeSql`-- reports-query-performance-cache-and-index-hit-rate
+select
+    'index hit rate' as name,
+    (sum(idx_blks_hit)) / nullif(sum(idx_blks_hit + idx_blks_read),0) as ratio
+  from pg_statio_user_indexes
+  union all
+  select
+    'table hit rate' as name,
+    sum(heap_blks_hit) / nullif(sum(heap_blks_hit) + sum(heap_blks_read),0) as ratio
+  from pg_statio_user_tables;`},unified:{queryType:"db",safeSql:(e,t,s,r=!1,n=!1,o=1,i=20)=>{let _=(o-1)*i,l=n&&r?_+10*i:_+i,u=r?Math.min(l,500):l;return a.safeSql`
+        -- reports-query-performance-unified
+        set search_path to public, extensions;
+
+        -- compute total time once up front so we don't need a window function over all rows
+        with grand_total as (
+          select coalesce(nullif(sum(total_exec_time + total_plan_time), 0), 1) as v
+          from pg_stat_statements where calls > 0
+        ),
+        base as (
+          select
+            auth.rolname,
+            statements.query,
+            statements.calls,
+            statements.total_exec_time + statements.total_plan_time as total_time,
+            statements.min_exec_time + statements.min_plan_time as min_time,
+            statements.max_exec_time + statements.max_plan_time as max_time,
+            statements.mean_exec_time + statements.mean_plan_time as mean_time,
+            coalesce(statements.rows::numeric / nullif(statements.calls, 0), 0) as avg_rows,
+            statements.rows as rows_read,
+            statements.shared_blks_hit as debug_hit,
+            statements.shared_blks_read as debug_read,
+            case
+              when (statements.shared_blks_hit + statements.shared_blks_read) > 0
+              then (statements.shared_blks_hit::numeric * 100.0) /
+                   (statements.shared_blks_hit + statements.shared_blks_read)
+              else 0
+            end as cache_hit_rate,
+            coalesce(
+              ((statements.total_exec_time + statements.total_plan_time) /
+                (select v from grand_total)) *
+                100,
+              0
+            ) as prop_total_time
+          from pg_stat_statements as statements
+            inner join pg_authid as auth on statements.userid = auth.oid
+          -- skip queries that were never actually executed
+          WHERE statements.calls > 0 ${t?E(t):a.safeSql``}
+          ${s||a.safeSql`order by total_time desc`}
+          ${null!==u?a.safeSql`limit ${(0,a.literal)(u)}`:a.safeSql``}
+        ),
+        query_results as (
+          select
+            base.*${r?a.safeSql`,
+            case
+              when (lower(base.query) like 'select%' or lower(base.query) like 'with pgrst%')
+              then (
+                select json_build_object(
+                  'has_suggestion', array_length(index_statements, 1) > 0,
+                  'startup_cost_before', startup_cost_before,
+                  'startup_cost_after', startup_cost_after,
+                  'total_cost_before', total_cost_before,
+                  'total_cost_after', total_cost_after,
+                  'index_statements', index_statements
+                )
+                from index_advisor(base.query)
+              )
+              else null
+            end as index_advisor_result`:a.safeSql``}
+          from base
+        )
+        select *
+        from query_results
+        ${n&&r?a.safeSql`where (index_advisor_result->>'has_suggestion')::boolean = true`:a.safeSql``}
+        ${s||a.safeSql`order by total_time desc`}
+        limit ${(0,a.literal)(i)} offset ${(0,a.literal)(_)}`}},slowQueriesCount:{queryType:"db",safeSql:()=>a.safeSql`
+        -- reports-query-performance-slow-queries-count
+        set search_path to public, extensions;
+
+        -- Count of slow queries (> 1 second average)
+        SELECT count(*) as slow_queries_count
+        -- alias needed to reference columns in WHERE
+        FROM pg_stat_statements as statements
+        -- skip never-executed queries; mean_exec_time > 1000ms = avg over 1 second
+        WHERE statements.calls > 0 AND statements.mean_exec_time > 1000;`},queryMetrics:{queryType:"db",safeSql:(e,t,s,r=!1,n=!1)=>a.safeSql`
+        -- reports-query-performance-metrics
+        set search_path to public, extensions;
+
+        SELECT
+          COALESCE(ROUND(AVG(statements.rows::numeric / NULLIF(statements.calls, 0)), 1), 0) as avg_rows_per_call,
+          COUNT(*) FILTER (WHERE statements.total_exec_time + statements.total_plan_time > 1000) as slow_queries,
+          COALESCE(
+            ROUND(
+              SUM(statements.shared_blks_hit) * 100.0 /
+              NULLIF(SUM(statements.shared_blks_hit + statements.shared_blks_read), 0),
+              2
+            ), 0
+          ) || '%' as cache_hit_rate
+        FROM pg_stat_statements as statements
+        -- skip queries that were never actually executed
+        WHERE statements.calls > 0 ${t?E(t):a.safeSql``}
+        ${s||a.safeSql``}`}}},[n.DATABASE]:{title:"database",queries:{largeObjects:{queryType:"db",safeSql:e=>a.safeSql`-- reports-database-large-objects
+SELECT
+        SCHEMA_NAME,
+        relname,
+        table_size
+      FROM
+        (SELECT
+          pg_catalog.pg_namespace.nspname AS SCHEMA_NAME,
+          relname,
+          pg_total_relation_size(pg_catalog.pg_class.oid) AS table_size
+        FROM pg_catalog.pg_class
+        JOIN pg_catalog.pg_namespace ON relnamespace = pg_catalog.pg_namespace.oid
+        ) t
+      WHERE SCHEMA_NAME NOT LIKE 'pg_%'
+      ORDER BY table_size DESC
+      LIMIT 5;`}}}};e.s(["BURSTABLE_IO_METRIC_KEYS",0,["disk_io_budget","disk_io_consumption"],"DEFAULT_QUERY_PARAMS",0,l,"DEPRECATED_REPORTS",0,["total_realtime_ingress","total_rest_options_requests","total_auth_ingress","total_auth_get_requests","total_auth_post_requests","total_auth_patch_requests","total_auth_options_requests","total_storage_options_requests","total_storage_patch_requests","total_options_requests","total_rest_ingress","total_rest_get_requests","total_rest_post_requests","total_rest_patch_requests","total_rest_delete_requests","total_storage_get_requests","total_storage_post_requests","total_storage_delete_requests","total_auth_delete_requests","total_get_requests","total_patch_requests","total_post_requests","total_ingress","total_delete_requests"],"EDGE_FUNCTION_REGIONS",0,[{key:"ap-northeast-1",label:"Tokyo"},{key:"ap-northeast-2",label:"Seoul"},{key:"ap-south-1",label:"Mumbai"},{key:"ap-southeast-1",label:"Singapore"},{key:"ap-southeast-2",label:"Sydney"},{key:"ca-central-1",label:"Canada Central"},{key:"us-east-1",label:"N. Virginia"},{key:"us-west-1",label:"N. California"},{key:"us-west-2",label:"Oregon"},{key:"eu-central-1",label:"Frankfurt"},{key:"eu-west-1",label:"Ireland"},{key:"eu-west-2",label:"London"},{key:"eu-west-3",label:"Paris"},{key:"sa-east-1",label:"São Paulo"}],"LAYOUT_COLUMN_COUNT",0,2,"PRESET_CONFIG",0,c,"REPORTS_DATEPICKER_HELPERS",0,_,"REPORT_DATERANGE_HELPER_LABELS",()=>i,"generateRegexpWhereSafe",0,u],820308)},610144,e=>{"use strict";e.i(850036);var t=e.i(53336),s=e.i(705541),a=e.i(964574),r=e.i(739114),n=e.i(667286),o=e.i(78162),i=e.i(617361);async function _({projectRef:e,connectionString:s,schema:a,name:r,version:n,cascade:o=!1,createSchema:l=!1}){let E=new Headers;s&&E.set("x-connection-encrypted",s);let u=(0,t.getEnableDatabaseExtensionSQL)({schema:a,name:r,version:n,cascade:o,createSchema:l}),{result:c}=await (0,i.executeSql)({projectRef:e,connectionString:s,sql:u,queryKey:["extension","create"]});return c}e.s(["useDatabaseExtensionEnableMutation",0,({onSuccess:e,onError:t,...i}={})=>{let l=(0,a.useQueryClient)();return(0,s.useMutation)({mutationFn:e=>_(e),async onSuccess(t,s,a){let{projectRef:r}=s;await Promise.all([l.invalidateQueries({queryKey:n.databaseExtensionsKeys.list(r)}),l.invalidateQueries({queryKey:o.configKeys.upgradeEligibility(r)})]),await e?.(t,s,a)},async onError(e,s,a){void 0===t?r.toast.error(`Failed to enable database extension: ${e.message}`):t(e,s,a)},...i})}])},888525,760255,284399,e=>{"use strict";e.i(850036);var t=e.i(479084),s=e.i(739114),a=e.i(617361),r=e.i(392491);function n(e=[]){return{hypopg:e.find(e=>"hypopg"===e.name),indexAdvisor:e.find(e=>"index_advisor"===e.name)}}async function o({projectRef:e,connectionString:r,indexStatements:n,onSuccess:i,onError:_}){if(!e){let e=Error("Project ref is required");return _&&_(e),Promise.reject(e)}if(0===n.length){let e=Error("No index statements provided");return _&&_(e),Promise.reject(e)}try{return await (0,a.executeSql)({projectRef:e,connectionString:r,sql:t.safeSql`${(0,t.joinSqlFragments)(n,";\n")};`}),s.toast.success("Successfully created index"),i&&i(),Promise.resolve()}catch(e){return s.toast.error(`Failed to create index: ${e.message}`),_&&_(e),Promise.reject(e)}}function i(e){return e&&0!==e.length?e.filter(e=>{let t=e.match(/ON\s+(?:"?(\w+)"?\.|(\w+)\.)/i);if(!t)return!0;let s=t[1]||t[2];return!s||!r.INTERNAL_SCHEMAS.includes(s.toLowerCase())}):[]}e.s(["calculateImprovement",0,function(e,t){if(void 0===e||void 0===t)return 0;let s=Number(e),a=Number(t);return s<=0||s<=a?0:(s-a)/s*100},"createIndexes",0,o,"filterProtectedSchemaIndexAdvisorResult",0,function(e){if(!e||!e.index_statements)return e??null;let t=i(e.index_statements);return 0===t.length?null:{...e,index_statements:t}},"filterProtectedSchemaIndexStatements",0,i,"getIndexAdvisorExtensions",0,n,"hasIndexRecommendations",0,function(e,t){return!!(t&&e?.index_statements&&e.index_statements.length>0)},"queryInvolvesProtectedSchemas",0,function(e){if(!e)return!1;let t=e.toLowerCase();return r.INTERNAL_SCHEMAS.some(e=>RegExp(`(?:from|join|update|insert\\s+into|delete\\s+from)\\s+(?:${e}\\.|"${e}"\\.)`,"i").test(t))}],760255);var _=e.i(450972),l=e.i(635494);e.s(["useIndexAdvisorStatus",0,function(){let{data:e}=(0,l.useSelectedProjectQuery)(),{data:t}=(0,_.useDatabaseExtensionsQuery)({projectRef:e?.ref,connectionString:e?.connectionString}),{hypopg:s,indexAdvisor:a}=n(t??[]),r=!!s&&!!a,o=r&&null!==s.installed_version&&null!==a.installed_version;return{isIndexAdvisorAvailable:r,isIndexAdvisorEnabled:o}}],888525);var E=e.i(221628),u=e.i(416340),c=e.i(232520),d=e.i(837710),S=e.i(610144),m=e.i(967052);let R=({open:e,setOpen:t})=>{let a=(0,m.useTrack)(),{data:r}=(0,l.useSelectedProjectQuery)(),{data:o}=(0,_.useDatabaseExtensionsQuery)({projectRef:r?.ref,connectionString:r?.connectionString}),{hypopg:i,indexAdvisor:u}=n(o),{mutateAsync:d,isPending:R}=(0,S.useDatabaseExtensionEnableMutation)(),h=async()=>{if(void 0===r)return s.toast.error("Project is required");try{i?.installed_version===null&&await d({projectRef:r?.ref,connectionString:r?.connectionString,name:i.name,schema:i?.schema??"extensions",version:i.default_version}),u?.installed_version===null&&await d({projectRef:r?.ref,connectionString:r?.connectionString,name:u.name,schema:u?.schema??"extensions",version:u.default_version}),s.toast.success("Successfully enabled Index Advisor!"),t(!1)}catch(e){throw s.toast.error(`Failed to enable Index Advisor: ${e.message}`),e}};return(0,E.jsx)(c.AlertDialog,{open:e,onOpenChange:()=>t(!e),children:(0,E.jsxs)(c.AlertDialogContent,{size:"small",children:[(0,E.jsxs)(c.AlertDialogHeader,{children:[(0,E.jsx)(c.AlertDialogTitle,{children:"Enable Index Advisor"}),(0,E.jsxs)(c.AlertDialogDescription,{className:"flex flex-col gap-y-2",children:[(0,E.jsx)("p",{children:"The Index Advisor recommends indexes to improve query performance on your tables based on your actual query patterns."}),(0,E.jsxs)("p",{children:["This will install the"," ",(0,E.jsx)("code",{className:"text-code-inline break-normal!",children:"index_advisor"})," and"," ",(0,E.jsx)("code",{className:"text-code-inline break-normal!",children:"hypopg"})," Postgres extensions so Index Advisor can analyse queries and suggest performance-improving indexes."]})]})]}),(0,E.jsxs)(c.AlertDialogFooter,{children:[(0,E.jsx)(c.AlertDialogCancel,{children:"Cancel"}),(0,E.jsx)(c.AlertDialogAction,{loading:R,onClick:()=>(a("index_advisor_enable_button_clicked",{origin:"dialog"}),h()),children:R?"Enabling...":"Enable"})]})]})})};e.s(["EnableIndexAdvisorButton",0,()=>{let e=(0,m.useTrack)(),[t,s]=(0,u.useState)(!1);return(0,E.jsxs)(E.Fragment,{children:[(0,E.jsx)(d.Button,{variant:"primary",onClick:()=>{s(!0),e("index_advisor_enable_button_clicked",{origin:"banner"})},children:"Enable"}),(0,E.jsx)(R,{open:t,setOpen:s})]})},"EnableIndexAdvisorDialog",0,R],284399)},749199,e=>{"use strict";var t=e.i(125356),s=e.i(820308),a=e.i(150671),r=e.i(617361),n=e.i(635494),o=e.i(10429),i=e.i(189329);e.s(["default",0,({sql:e,params:_=s.DEFAULT_QUERY_PARAMS,where:l,orderBy:E})=>{let{data:u}=(0,n.useSelectedProjectQuery)(),c=(0,i.useDatabaseSelectorStateSnapshot)(),{data:d}=(0,a.useReadReplicasQuery)({projectRef:u?.ref}),S=(d||[]).find(e=>e.identifier===c.selectedDatabaseId)?.connection_string_read_only,m=c.selectedDatabaseId,R=c.selectedDatabaseId&&c.selectedDatabaseId!==u?.ref?S:S??u?.connectionString,h="function"==typeof e?e([]):e,{data:A,error:T,isPending:p,isRefetching:f,refetch:N}=(0,t.useQuery)({queryKey:["projects",u?.ref,"db",{..._,sql:h,identifier:m,connectionString:R},l,E],queryFn:({signal:e})=>(0,r.executeSql)({projectRef:u?.ref,connectionString:R,sql:h},e).then(e=>e.result),enabled:!!h&&(!o.IS_PLATFORM||!!R),refetchOnWindowFocus:!1,refetchOnReconnect:!1});return{error:T||("object"==typeof A?A?.error:""),data:A,isLoading:p,isRefetching:f,params:_,runQuery:N,resolvedSql:h}}])},924529,e=>{"use strict";var t=e.i(125356);e.i(128328);var s=e.i(86086),a=e.i(416340),r=e.i(993394),n=e.i(460988),o=e.i(234745),i=e.i(441331),_=e.i(912793),l=e.i(10429);e.s(["useLogsQuery",0,({projectRef:e,initialParams:E={},enabled:u=!0,options:c={}})=>{let{useOtel:d=!1}=c,S=(0,r.getDefaultHelper)(r.EXPLORER_DATEPICKER_HELPERS),[m,R]=(0,a.useState)({sql:E?.sql||"",iso_timestamp_start:E.iso_timestamp_start?E.iso_timestamp_start:S.calcFrom(),iso_timestamp_end:E.iso_timestamp_end?E.iso_timestamp_end:S.calcTo()}),{logsMetadata:h}=(0,_.useIsFeatureEnabled)(["logs:metadata"]);(0,a.useEffect)(()=>{R(e=>({...e,...E,sql:E?.sql??e.sql,iso_timestamp_start:E.iso_timestamp_start??e.iso_timestamp_start,iso_timestamp_end:E.iso_timestamp_end??e.iso_timestamp_end}))},[E.sql,E.iso_timestamp_start,E.iso_timestamp_end]);let A=u&&void 0!==e&&!!m.sql,T=(0,n.checkForWithClause)(m.sql||""),p=(0,n.checkForILIKEClause)(m.sql||""),{data:f,error:N,isPending:O,isRefetching:I,refetch:g}=(0,t.useQuery)({queryKey:["projects",e,"logs",m,{otel:d}],queryFn:async({signal:t})=>{let{data:s,error:a}=await (0,o.get)((0,i.logsAllEndpointUrl)(d),{params:{path:{ref:e},query:m},signal:t});if(a)throw a;return s},enabled:A,refetchOnWindowFocus:!1}),C=N?N.message:null;return!C&&f?.error&&(C=f?.error),s.IS_PLATFORM&&!d&&(T&&(C={message:"The parser does not yet support WITH and subquery statements.",docs:`${l.DOCS_URL}/guides/platform/advanced-log-filtering#the-with-keyword-and-subqueries-are-not-supported`}),p&&(C={message:"BigQuery does not support ILIKE. Use REGEXP_CONTAINS instead.",docs:`${l.DOCS_URL}/guides/platform/advanced-log-filtering#the-ilike-and-similar-to-keywords-are-not-supported`})),{params:m,isLoading:A&&O||I,logData:(f?.result??[]).map(e=>{if(h)return e;{let{metadata:t,...s}=e;return s}}),error:C,changeQuery:(e="")=>{R(t=>({...t,sql:e}))},runQuery:()=>g(),setParams:R}}])},323203,e=>{"use strict";var t=e.i(338391),s=e.i(441331),a=e.i(562616);let r={minute:a.safeSql`minute`,hour:a.safeSql`hour`,day:a.safeSql`day`},n={"=":a.safeSql`=`,">=":a.safeSql`>=`,"<=":a.safeSql`<=`,">":a.safeSql`>`,"<":a.safeSql`<`,"!=":a.safeSql`!=`};async function o(e,a,r,n,i=!1){return await (0,t.executeAnalyticsSql)({projectRef:e,endpoint:(0,s.logsAllEndpointUrl)(i),sql:a,iso_timestamp_start:r,iso_timestamp_end:n,method:"get"})}e.s(["REPORT_STATUS_CODE_COLORS",0,{400:{light:"#FFD54F",dark:"#FFF176"},401:{light:"#FF8A65",dark:"#FFAB91"},403:{light:"#FFB74D",dark:"#FFCC80"},404:{light:"#90A4AE",dark:"#B0BEC5"},409:{light:"#BA68C8",dark:"#CE93D8"},410:{light:"#A1887F",dark:"#BCAAA4"},422:{light:"#FF9800",dark:"#FFB74D"},429:{light:"#E65100",dark:"#F57C00"},500:{light:"#B71C1C",dark:"#D32F2F"},502:{light:"#9575CD",dark:"#B39DDB"},503:{light:"#0097A7",dark:"#4DD0E1"},504:{light:"#C0CA33",dark:"#D4E157"},default:{light:"#757575",dark:"#9E9E9E"}},"SAFE_COMPARISON_OPERATOR_SQL",0,n,"SAFE_GRANULARITY_SQL",0,r,"analyticsIntervalToGranularity",0,function(e){switch(e){case"1m":case"5m":case"10m":case"30m":return"minute";case"1h":default:return"hour";case"1d":return"day"}},"fetchLogs",0,o])},554344,e=>{"use strict";var t=e.i(55956),s=e.i(460988),a=e.i(323203),r=e.i(749199),n=e.i(924529),o={"1xx":"Informational","1xx_NAME":"INFORMATIONAL","1xx_MESSAGE":"Indicates an interim response for communicating connection status or request progress prior to completing the requested action and sending a final response.",INFORMATIONAL:"1xx","2xx":"Successful","2xx_NAME":"SUCCESSFUL","2xx_MESSAGE":"Indicates that the client's request was successfully received, understood, and accepted.",SUCCESSFUL:"2xx","3xx":"Redirection","3xx_NAME":"REDIRECTION","3xx_MESSAGE":"Indicates that further action needs to be taken by the user agent in order to fulfill the request.",REDIRECTION:"3xx","4xx":"Client Error","4xx_NAME":"CLIENT_ERROR","4xx_MESSAGE":"Indicates that the client seems to have erred.",CLIENT_ERROR:"4xx","5xx":"Server Error","5xx_NAME":"SERVER_ERROR","5xx_MESSAGE":"Indicates that the server is aware that it has erred or is incapable of performing the requested method.",SERVER_ERROR:"5xx"},i={classes:o,100:"Continue","100_NAME":"CONTINUE","100_MESSAGE":"The server has received the request headers and the client should proceed to send the request body.","100_CLASS":o.INFORMATIONAL,CONTINUE:100,101:"Switching Protocols","101_NAME":"SWITCHING_PROTOCOLS","101_MESSAGE":"The requester has asked the server to switch protocols and the server has agreed to do so.","101_CLASS":o.INFORMATIONAL,SWITCHING_PROTOCOLS:101,102:"Processing","102_NAME":"PROCESSING","102_MESSAGE":"A WebDAV request may contain many sub-requests involving file operations, requiring a long time to complete the request. This code indicates that the server has received and is processing the request, but no response is available yet.[7] This prevents the client from timing out and assuming the request was lost.","102_CLASS":o.INFORMATIONAL,PROCESSING:102,103:"Early Hints","103_NAME":"EARLY_HINTS","103_MESSAGE":"Used to return some response headers before final HTTP message.","103_CLASS":o.INFORMATIONAL,EARLY_HINTS:103,200:"OK","200_NAME":"OK","200_MESSAGE":"Standard response for successful HTTP requests.","200_CLASS":o.SUCCESSFUL,OK:200,201:"Created","201_NAME":"CREATED","201_MESSAGE":"The request has been fulfilled, resulting in the creation of a new resource.","201_CLASS":o.SUCCESSFUL,CREATED:201,202:"Accepted","202_NAME":"ACCEPTED","202_MESSAGE":"The request has been accepted for processing, but the processing has not been completed.","202_CLASS":o.SUCCESSFUL,ACCEPTED:202,203:"Non-Authoritative Information","203_NAME":"NON_AUTHORITATIVE_INFORMATION","203_MESSAGE":"The server is a transforming proxy (e.g. a Web accelerator) that received a 200 OK from its origin, but is returning a modified version of the origin's response.","203_CLASS":o.SUCCESSFUL,NON_AUTHORITATIVE_INFORMATION:203,204:"No Content","204_NAME":"NO_CONTENT","204_MESSAGE":"The server successfully processed the request and is not returning any content.","204_CLASS":o.SUCCESSFUL,NO_CONTENT:204,205:"Reset Content","205_NAME":"RESET_CONTENT","205_MESSAGE":"The server successfully processed the request, but is not returning any content. Unlike a 204 response, this response requires that the requester reset the document view.","205_CLASS":o.SUCCESSFUL,RESET_CONTENT:205,206:"Partial Content","206_NAME":"PARTIAL_CONTENT","206_MESSAGE":"The server is delivering only part of the resource (byte serving) due to a range header sent by the client.","206_CLASS":o.SUCCESSFUL,PARTIAL_CONTENT:206,207:"Multi Status","207_NAME":"MULTI_STATUS","207_MESSAGE":"The message body that follows is by default an XML message and can contain a number of separate response codes, depending on how many sub-requests were made.","207_CLASS":o.SUCCESSFUL,MULTI_STATUS:207,208:"Already Reported","208_NAME":"ALREADY_REPORTED","208_MESSAGE":"The members of a DAV binding have already been enumerated in a preceding part of the (multistatus) response, and are not being included again.","208_CLASS":o.SUCCESSFUL,ALREADY_REPORTED:208,226:"IM Used","226_NAME":"IM_USED","226_MESSAGE":"The server has fulfilled a request for the resource, and the response is a representation of the result of one or more instance-manipulations applied to the current instance.","226_CLASS":o.SUCCESSFUL,IM_USED:226,300:"Multiple Choices","300_NAME":"MULTIPLE_CHOICES","300_MESSAGE":"Indicates multiple options for the resource from which the client may choose.","300_CLASS":o.REDIRECTION,MULTIPLE_CHOICES:300,301:"Moved Permanently","301_NAME":"MOVED_PERMANENTLY","301_MESSAGE":"This and all future requests should be directed to the given URI.","301_CLASS":o.REDIRECTION,MOVED_PERMANENTLY:301,302:"Found","302_NAME":"FOUND","302_MESSAGE":'This is an example of industry practice contradicting the standard. The HTTP/1.0 specification (RFC 1945) required the client to perform a temporary redirect (the original describing phrase was "Moved Temporarily"), but popular browsers implemented 302 with the functionality of a 303 See Other. Therefore, HTTP/1.1 added status codes 303 and 307 to distinguish between the two behaviours.',"302_CLASS":o.REDIRECTION,FOUND:302,303:"See Other","303_NAME":"SEE_OTHER","303_MESSAGE":"The response to the request can be found under another URI using the GET method.","303_CLASS":o.REDIRECTION,SEE_OTHER:303,304:"Not Modified","304_NAME":"NOT_MODIFIED","304_MESSAGE":"Indicates that the resource has not been modified since the version specified by the request headers If-Modified-Since or If-None-Match.","304_CLASS":o.REDIRECTION,NOT_MODIFIED:304,305:"Use Proxy","305_NAME":"USE_PROXY","305_MESSAGE":"The requested resource is available only through a proxy, the address for which is provided in the response.","305_CLASS":o.REDIRECTION,USE_PROXY:305,306:"Switch Proxy","306_NAME":"SWITCH_PROXY","306_MESSAGE":'No longer used. Originally meant "Subsequent requests should use the specified proxy.',"306_CLASS":o.REDIRECTION,SWITCH_PROXY:306,307:"Temporary Redirect","307_NAME":"TEMPORARY_REDIRECT","307_MESSAGE":"In this case, the request should be repeated with another URI; however, future requests should still use the original URI.","307_CLASS":o.REDIRECTION,TEMPORARY_REDIRECT:307,308:"Permanent Redirect","308_NAME":"PERMANENT_REDIRECT","308_MESSAGE":"The request and all future requests should be repeated using another URI.","308_CLASS":o.REDIRECTION,PERMANENT_REDIRECT:308,400:"Bad Request","400_NAME":"BAD_REQUEST","400_MESSAGE":"The server cannot or will not process the request due to an apparent client error.","400_CLASS":o.CLIENT_ERROR,BAD_REQUEST:400,401:"Unauthorized","401_NAME":"UNAUTHORIZED","401_MESSAGE":"Similar to 403 Forbidden, but specifically for use when authentication is required and has failed or has not yet been provided.","401_CLASS":o.CLIENT_ERROR,UNAUTHORIZED:401,402:"Payment Required","402_NAME":"PAYMENT_REQUIRED","402_MESSAGE":"Reserved for future use. The original intention was that this code might be used as part of some form of digital cash or micropayment scheme, as proposed for example by GNU Taler, but that has not yet happened, and this code is not usually used.","402_CLASS":o.CLIENT_ERROR,PAYMENT_REQUIRED:402,403:"Forbidden","403_NAME":"FORBIDDEN","403_MESSAGE":"The request was valid, but the server is refusing action.","403_CLASS":o.CLIENT_ERROR,FORBIDDEN:403,404:"Not Found","404_NAME":"NOT_FOUND","404_MESSAGE":"The requested resource could not be found but may be available in the future. Subsequent requests by the client are permissible.","404_CLASS":o.CLIENT_ERROR,NOT_FOUND:404,405:"Method Not Allowed","405_NAME":"METHOD_NOT_ALLOWED","405_MESSAGE":"A request method is not supported for the requested resource.","405_CLASS":o.CLIENT_ERROR,METHOD_NOT_ALLOWED:405,406:"Not Acceptable","406_NAME":"NOT_ACCEPTABLE","406_MESSAGE":"The requested resource is capable of generating only content not acceptable according to the Accept headers sent in the request.","406_CLASS":o.CLIENT_ERROR,NOT_ACCEPTABLE:406,407:"Proxy Authentication Required","407_NAME":"PROXY_AUTHENTICATION_REQUIRED","407_MESSAGE":"The client must first authenticate itself with the proxy.","407_CLASS":o.CLIENT_ERROR,PROXY_AUTHENTICATION_REQUIRED:407,408:"Request Time-out","408_NAME":"REQUEST_TIMEOUT","408_MESSAGE":"The server timed out waiting for the request.","408_CLASS":o.CLIENT_ERROR,REQUEST_TIMEOUT:408,409:"Conflict","409_NAME":"CONFLICT","409_MESSAGE":"Indicates that the request could not be processed because of conflict in the request, such as an edit conflict between multiple simultaneous updates.","409_CLASS":o.CLIENT_ERROR,CONFLICT:409,410:"Gone","410_NAME":"GONE","410_MESSAGE":"Indicates that the resource requested is no longer available and will not be available again.","410_CLASS":o.CLIENT_ERROR,GONE:410,411:"Length Required","411_NAME":"LENGTH_REQUIRED","411_MESSAGE":"The request did not specify the length of its content, which is required by the requested resource.","411_CLASS":o.CLIENT_ERROR,LENGTH_REQUIRED:411,412:"Precondition Failed","412_NAME":"PRECONDITION_FAILED","412_MESSAGE":"The server does not meet one of the preconditions that the requester put on the request.","412_CLASS":o.CLIENT_ERROR,PRECONDITION_FAILED:412,413:"Request Entity Too Large","413_NAME":"REQUEST_ENTITY_TOO_LARGE","413_MESSAGE":'The request is larger than the server is willing or able to process. Previously called "Request Entity Too Large".',"413_CLASS":o.CLIENT_ERROR,REQUEST_ENTITY_TOO_LARGE:413,414:"Request-URI Too Large","414_NAME":"REQUEST_URI_TOO_LONG","414_MESSAGE":"The URI provided was too long for the server to process.","414_CLASS":o.CLIENT_ERROR,REQUEST_URI_TOO_LONG:414,415:"Unsupported Media Type","415_NAME":"UNSUPPORTED_MEDIA_TYPE","415_MESSAGE":"The request entity has a media type which the server or resource does not support.","415_CLASS":o.CLIENT_ERROR,UNSUPPORTED_MEDIA_TYPE:415,416:"Requested Range not Satisfiable","416_NAME":"REQUESTED_RANGE_NOT_SATISFIABLE","416_MESSAGE":"The client has asked for a portion of the file (byte serving), but the server cannot supply that portion.","416_CLASS":o.CLIENT_ERROR,REQUESTED_RANGE_NOT_SATISFIABLE:416,417:"Expectation Failed","417_NAME":"EXPECTATION_FAILED","417_MESSAGE":"The server cannot meet the requirements of the Expect request-header field.","417_CLASS":o.CLIENT_ERROR,EXPECTATION_FAILED:417,418:"I'm a teapot","418_NAME":"IM_A_TEAPOT","418_MESSAGE":'Any attempt to brew coffee with a teapot should result in the error code "418 I\'m a teapot". The resulting entity body MAY be short and stout.',"418_CLASS":o.CLIENT_ERROR,IM_A_TEAPOT:418,421:"Misdirected Request","421_NAME":"MISDIRECTED_REQUEST","421_MESSAGE":"The request was directed at a server that is not able to produce a response.","421_CLASS":o.CLIENT_ERROR,MISDIRECTED_REQUEST:421,422:"Unprocessable Entity","422_NAME":"UNPROCESSABLE_ENTITY","422_MESSAGE":"The request was well-formed but was unable to be followed due to semantic errors.","422_CLASS":o.CLIENT_ERROR,UNPROCESSABLE_ENTITY:422,423:"Locked","423_NAME":"LOCKED","423_MESSAGE":"The resource that is being accessed is locked.","423_CLASS":o.CLIENT_ERROR,LOCKED:423,424:"Failed Dependency","424_NAME":"FAILED_DEPENDENCY","424_MESSAGE":"The request failed because it depended on another request and that request failed.","424_CLASS":o.CLIENT_ERROR,FAILED_DEPENDENCY:424,425:"Too Early","425_NAME":"TOO_EARLY","425_MESSAGE":"The server is unwilling to risk processing a request that might be replayed.","425_CLASS":o.CLIENT_ERROR,TOO_EARLY:425,426:"Upgrade Required","426_NAME":"UPGRADE_REQUIRED","426_MESSAGE":"The client should switch to a different protocol such as TLS/1.0, given in the Upgrade header field.","426_CLASS":o.CLIENT_ERROR,UPGRADE_REQUIRED:426,428:"Precondition Required","428_NAME":"PRECONDITION_REQUIRED","428_MESSAGE":"The origin server requires the request to be conditional.","428_CLASS":o.CLIENT_ERROR,PRECONDITION_REQUIRED:428,429:"Too Many Requests","429_NAME":"TOO_MANY_REQUESTS","429_MESSAGE":"The user has sent too many requests in a given amount of time.","429_CLASS":o.CLIENT_ERROR,TOO_MANY_REQUESTS:429,431:"Request Header Fields Too Large","431_NAME":"REQUEST_HEADER_FIELDS_TOO_LARGE","431_MESSAGE":"The server is unwilling to process the request because either an individual header field, or all the header fields collectively, are too large.","431_CLASS":o.CLIENT_ERROR,REQUEST_HEADER_FIELDS_TOO_LARGE:431,451:"Unavailable For Legal Reasons","451_NAME":"UNAVAILABLE_FOR_LEGAL_REASONS","451_MESSAGE":"A server operator has received a legal demand to deny access to a resource or to a set of resources that includes the requested resource.","451_CLASS":o.CLIENT_ERROR,UNAVAILABLE_FOR_LEGAL_REASONS:451,500:"Internal Server Error","500_NAME":"INTERNAL_SERVER_ERROR","500_MESSAGE":"A generic error message, given when an unexpected condition was encountered and no more specific message is suitable.","500_CLASS":o.SERVER_ERROR,INTERNAL_SERVER_ERROR:500,501:"Not Implemented","501_NAME":"NOT_IMPLEMENTED","501_MESSAGE":"The server either does not recognize the request method, or it lacks the ability to fulfil the request. Usually this implies future availability.","501_CLASS":o.SERVER_ERROR,NOT_IMPLEMENTED:501,502:"Bad Gateway","502_NAME":"BAD_GATEWAY","502_MESSAGE":"The server was acting as a gateway or proxy and received an invalid response from the upstream server.","502_CLASS":o.SERVER_ERROR,BAD_GATEWAY:502,503:"Service Unavailable","503_NAME":"SERVICE_UNAVAILABLE","503_MESSAGE":"The server is currently unavailable (because it is overloaded or down for maintenance). Generally, this is a temporary state.","503_CLASS":o.SERVER_ERROR,SERVICE_UNAVAILABLE:503,504:"Gateway Time-out","504_NAME":"GATEWAY_TIMEOUT","504_MESSAGE":"The server was acting as a gateway or proxy and did not receive a timely response from the upstream server.","504_CLASS":o.SERVER_ERROR,GATEWAY_TIMEOUT:504,505:"HTTP Version not Supported","505_NAME":"HTTP_VERSION_NOT_SUPPORTED","505_MESSAGE":"The server does not support the HTTP protocol version used in the request.","505_CLASS":o.SERVER_ERROR,HTTP_VERSION_NOT_SUPPORTED:505,506:"Variant Also Negotiates","506_NAME":"VARIANT_ALSO_NEGOTIATES","506_MESSAGE":"Transparent content negotiation for the request results in a circular reference.","506_CLASS":o.SERVER_ERROR,VARIANT_ALSO_NEGOTIATES:506,507:"Insufficient Storage","507_NAME":"INSUFFICIENT_STORAGE","507_MESSAGE":"The server is unable to store the representation needed to complete the request.","507_CLASS":o.SERVER_ERROR,INSUFFICIENT_STORAGE:507,508:"Loop Detected","508_NAME":"LOOP_DETECTED","508_MESSAGE":"The server detected an infinite loop while processing the request.","508_CLASS":o.SERVER_ERROR,LOOP_DETECTED:508,510:"Not Extended","510_NAME":"NOT_EXTENDED","510_MESSAGE":"Further extensions to the request are required for the server to fulfil it.","510_CLASS":o.SERVER_ERROR,NOT_EXTENDED:510,511:"Network Authentication Required","511_NAME":"NETWORK_AUTHENTICATION_REQUIRED","511_MESSAGE":"The client needs to authenticate to gain network access. Intended for use by intercepting proxies used to control access to the network.","511_CLASS":o.SERVER_ERROR,NETWORK_AUTHENTICATION_REQUIRED:511,extra:{unofficial:{103:"Checkpoint","103_NAME":"CHECKPOINT","103_MESSAGE":"Used in the resumable requests proposal to resume aborted PUT or POST requests.","103_CLASS":o.INFORMATIONAL,CHECKPOINT:103,419:"Page Expired","419_NAME":"PAGE_EXPIRED","419_MESSAGE":"Used by the Laravel Framework when a CSRF Token is missing or expired.","419_CLASS":o.CLIENT_ERROR,PAGE_EXPIRED:419,218:"This is fine","218_NAME":"THIS_IS_FINE","218_MESSAGE":"Used as a catch-all error condition for allowing response bodies to flow through Apache when ProxyErrorOverride is enabled. When ProxyErrorOverride is enabled in Apache, response bodies that contain a status code of 4xx or 5xx are automatically discarded by Apache in favor of a generic response or a custom response specified by the ErrorDocument directive.","218_CLASS":o.SUCCESSFUL,THIS_IS_FINE:218,420:"Enhance Your Calm","420_NAME":"ENHANCE_YOUR_CALM","420_MESSAGE":"Returned by version 1 of the Twitter Search and Trends API when the client is being rate limited; versions 1.1 and later use the 429 Too Many Requests response code instead.","420_CLASS":o.CLIENT_ERROR,ENHANCE_YOUR_CALM:420,450:"Blocked by Windows Parental Controls","450_NAME":"BLOCKED_BY_WINDOWS_PARENTAL_CONTROLS","450_MESSAGE":"The Microsoft extension code indicated when Windows Parental Controls are turned on and are blocking access to the requested webpage.","450_CLASS":o.CLIENT_ERROR,BLOCKED_BY_WINDOWS_PARENTAL_CONTROLS:450,498:"Invalid Token","498_NAME":"INVALID_TOKEN","498_MESSAGE":"Returned by ArcGIS for Server. Code 498 indicates an expired or otherwise invalid token.","498_CLASS":o.CLIENT_ERROR,INVALID_TOKEN:498,499:"Token Required","499_NAME":"TOKEN_REQUIRED","499_MESSAGE":"Returned by ArcGIS for Server. Code 499 indicates that a token is required but was not submitted.","499_CLASS":o.CLIENT_ERROR,TOKEN_REQUIRED:499,509:"Bandwidth Limit Exceeded","509_NAME":"BANDWIDTH_LIMIT_EXCEEDED","509_MESSAGE":"The server has exceeded the bandwidth specified by the server administrator.","509_CLASS":o.SERVER_ERROR,BANDWIDTH_LIMIT_EXCEEDED:509,530:"Site is frozen","530_NAME":"SITE_IS_FROZEN","530_MESSAGE":"Used by the Pantheon web platform to indicate a site that has been frozen due to inactivity.","530_CLASS":o.SERVER_ERROR,SITE_IS_FROZEN:530,598:"Network read timeout error","598_NAME":"NETWORK_READ_TIMEOUT_ERROR","598_MESSAGE":"Used by some HTTP proxies to signal a network read timeout behind the proxy to a client in front of the proxy.","598_CLASS":o.SERVER_ERROR,NETWORK_READ_TIMEOUT_ERROR:598},iis:{440:"Login Time-out","440_NAME":"LOGIN_TIME_OUT","440_MESSAGE":"The client's session has expired and must log in again.","440_CLASS":o.CLIENT_ERROR,LOGIN_TIME_OUT:440,449:"Retry With","449_NAME":"RETRY_WITH","449_MESSAGE":"The server cannot honour the request because the user has not provided the required information.","449_CLASS":o.CLIENT_ERROR,RETRY_WITH:449,451:"Redirect","451_NAME":"REDIRECT","451_MESSAGE":"Used in Exchange ActiveSync when either a more efficient server is available or the server cannot access the users' mailbox.","451_CLASS":o.CLIENT_ERROR,REDIRECT:451},nginx:{444:"No Response","444_NAME":"NO_RESPONSE","444_MESSAGE":"Used internally to instruct the server to return no information to the client and close the connection immediately.","444_CLASS":o.CLIENT_ERROR,NO_RESPONSE:444,494:"Request header too large","494_NAME":"REQUEST_HEADER_TOO_LARGE","494_MESSAGE":"Client sent too large request or too long header line.","494_CLASS":o.CLIENT_ERROR,REQUEST_HEADER_TOO_LARGE:494,495:"SSL Certificate Error","495_NAME":"SSL_CERTIFICATE_ERROR","495_MESSAGE":"An expansion of the 400 Bad Request response code, used when the client has provided an invalid client certificate.","495_CLASS":o.CLIENT_ERROR,SSL_CERTIFICATE_ERROR:495,496:"SSL Certificate Required","496_NAME":"SSL_CERTIFICATE_REQUIRED","496_MESSAGE":"An expansion of the 400 Bad Request response code, used when a client certificate is required but not provided.","496_CLASS":o.CLIENT_ERROR,SSL_CERTIFICATE_REQUIRED:496,497:"HTTP Request Sent to HTTPS Port","497_NAME":"HTTP_REQUEST_SENT_TO_HTTPS_PORT","497_MESSAGE":"An expansion of the 400 Bad Request response code, used when the client has made a HTTP request to a port listening for HTTPS requests.","497_CLASS":o.CLIENT_ERROR,HTTP_REQUEST_SENT_TO_HTTPS_PORT:497,499:"Client Closed Request","499_NAME":"CLIENT_CLOSED_REQUEST","499_MESSAGE":"Used when the client has closed the request before the server could send a response.","499_CLASS":o.CLIENT_ERROR,CLIENT_CLOSED_REQUEST:499},cloudflare:{520:"Unknown Error","520_NAME":"UNKNOWN_ERROR","520_MESSAGE":'The 520 error is used as a "catch-all response for when the origin server returns something unexpected", listing connection resets, large headers, and empty or invalid responses as common triggers.',"520_CLASS":o.SERVER_ERROR,UNKNOWN_ERROR:520,521:"Web Server Is Down","521_NAME":"WEB_SERVER_IS_DOWN","521_MESSAGE":"The origin server has refused the connection from Cloudflare.","521_CLASS":o.SERVER_ERROR,WEB_SERVER_IS_DOWN:521,522:"Connection Timed Out","522_NAME":"CONNECTION_TIMED_OUT","522_MESSAGE":"Cloudflare could not negotiate a TCP handshake with the origin server.","522_CLASS":o.SERVER_ERROR,CONNECTION_TIMED_OUT:522,523:"Origin Is Unreachable","523_NAME":"ORIGIN_IS_UNREACHABLE","523_MESSAGE":"Cloudflare could not reach the origin server.","523_CLASS":o.SERVER_ERROR,ORIGIN_IS_UNREACHABLE:523,524:"A Timeout Occurred","524_NAME":"A_TIMEOUT_OCCURRED","524_MESSAGE":"Cloudflare was able to complete a TCP connection to the origin server, but did not receive a timely HTTP response.","524_CLASS":o.SERVER_ERROR,A_TIMEOUT_OCCURRED:524,525:"SSL Handshake Failed","525_NAME":"SSL_HANDSHAKE_FAILED","525_MESSAGE":"Cloudflare could not negotiate a SSL/TLS handshake with the origin server.","525_CLASS":o.SERVER_ERROR,SSL_HANDSHAKE_FAILED:525,526:"Invalid SSL Certificate","526_NAME":"INVALID_SSL_CERTIFICATE","526_MESSAGE":"Cloudflare could not validate the SSL/TLS certificate that the origin server presented.","526_CLASS":o.SERVER_ERROR,INVALID_SSL_CERTIFICATE:526,527:"Railgun Error","527_NAME":"RAILGUN_ERROR","527_MESSAGE":"Error 527 indicates that the request timed out or failed after the WAN connection had been established.","527_CLASS":o.SERVER_ERROR,RAILGUN_ERROR:527}}};e.s(["extractStatusCodesFromData",0,function(e){let t=new Set;return e.forEach(e=>{void 0!==e.status_code&&null!==e.status_code&&t.add(String(e.status_code))}),Array.from(t).sort()},"generateStatusCodeAttributes",0,function(e){return e.map(e=>({attribute:e,label:`${e} ${function(e){if(!(e in i))return{code:e,name:"UNKNOWN",message:"Unknown status code",label:"Unknown"};let t=i[e],s=i[`${e}_MESSAGE`],a=i[`${e}_NAME`];return{code:e,name:a,label:t,message:s}}(parseInt(e,10)).label}`,color:a.REPORT_STATUS_CODE_COLORS[e]||a.REPORT_STATUS_CODE_COLORS.default}))},"getLogsSql",0,function(e,t){if("logs"!==e.queryType)throw Error(`Expected logs query, got ${e.queryType}`);return e.safeSql(t)},"queriesFactory",0,(e,t)=>Object.entries(e).reduce((e,[s,a])=>"db"===a.queryType?{...e,[s]:()=>(0,r.default)({sql:a.safeSql})}:{...e,[s]:()=>(0,n.useLogsQuery)({projectRef:t})},{}),"queryParamsToObject",0,e=>Object.fromEntries(new URLSearchParams(e)),"safeDecodeURIComponent",0,e=>{try{return decodeURIComponent(e)}catch{return e}},"transformCategoricalCountData",0,function(e,a,r){return Object.values(e.reduce((e,n)=>{let o=(0,s.isUnixMicro)(n.timestamp)?(0,s.unixMicroToIsoTimestamp)(n.timestamp):t.default.utc(n.timestamp).toISOString();e[o]||(e[o]={timestamp:o},r.forEach(t=>{e[o][t]=0}));let i=String(n[a]);return i in e[o]&&(e[o][i]=n.count),e},{}))},"transformStatusCodeData",0,function(e,a){return Object.values(e.reduce((e,r)=>{let n=(0,s.isUnixMicro)(r.timestamp)?(0,s.unixMicroToIsoTimestamp)(r.timestamp):t.default.utc(r.timestamp).toISOString();e[n]||(e[n]={timestamp:n},a.forEach(t=>{e[n][t]=0}));let o=String(r.status_code);return o in e[n]&&(e[n][o]=r.count),e},{}))}],554344)}]);
+
+//# debugId=c25ad7a0-9369-7630-c903-f126804d9ca8

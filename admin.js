@@ -772,6 +772,109 @@ async function saveResource(id) {
   closeModal(); showToast(id?'Resource updated ✓':'Resource added ✓','success'); renderResources();
 }
 
+/* ══════════════════════════════════════════════════
+   LEADERSHIP
+   Schema: id, name, role, city, photo_url, display_order
+   ══════════════════════════════════════════════════ */
+async function renderLeadership() {
+  const { data } = await dbSelect('leadership', { order:'display_order' });
+ 
+  document.getElementById('pageContent').innerHTML = `
+    <div class="page-header">
+      <div>
+        <div class="page-title">Leadership</div>
+        <div class="page-subtitle">${(data||[]).length} executive council members</div>
+      </div>
+      <button class="btn-primary" onclick="openLeaderModal()">+ Add member</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Photo</th>
+            <th>Name</th>
+            <th>Role</th>
+            <th>City</th>
+            <th>Phone</th>
+            <th>Order</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${(data||[]).map(l => `
+            <tr>
+              <td>
+                <img class="row-avatar" src="${l.photo_url||''}" alt="${l.name}"
+                  onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(l.name)}&background=168B2F&color=fff&size=80'" />
+              </td>
+              <td style="font-weight:600">${l.name}</td>
+              <td><span class="badge badge-green">${l.role||'—'}</span></td>
+              <td>${l.city||'—'}</td>
+              <td style="font-size:12px;color:var(--muted)">${l.phone||'—'}</td>
+              <td>${l.display_order||0}</td>
+              <td>
+                <div class="td-actions">
+                  <button class="btn-icon" onclick='openLeaderModal(${JSON.stringify(l)})' title="Edit">✏️</button>
+                  <button class="btn-icon" onclick="deleteRow('leadership','${l.id}','renderLeadership')" title="Delete">🗑️</button>
+                </div>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+ 
+function openLeaderModal(row = null) {
+  openModal(row ? 'Edit member' : 'Add member', `
+    <div class="form-row">
+      <div class="form-group"><label>Full name</label>
+        <input id="mLName" value="${row?.name||''}" placeholder="Full name" />
+      </div>
+      <div class="form-group"><label>Role / Title</label>
+        <input id="mLRole" value="${row?.role||''}" placeholder="President" />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>City</label>
+        <input id="mLCity" value="${row?.city||''}" placeholder="Moscow" />
+      </div>
+      <div class="form-group"><label>Phone number</label>
+        <input id="mLPhone" type="tel" value="${row?.phone||''}" placeholder="+7 (000) 000-0000" />
+      </div>
+    </div>
+    <div class="form-group"><label>Display order</label>
+      <input id="mLOrder" type="number" value="${row?.display_order||1}" min="1" />
+    </div>
+    <div class="form-group"><label>Profile photo</label>
+      ${buildImagePicker('mLPhoto', 'leadership', row?.photo_url||'')}
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveLeader('${row?.id||''}')">
+        ${row ? 'Save changes' : 'Add member'}
+      </button>
+    </div>`);
+}
+ 
+async function saveLeader(id) {
+  const row = {
+    name:          document.getElementById('mLName').value.trim(),
+    role:          document.getElementById('mLRole').value.trim(),
+    city:          document.getElementById('mLCity').value.trim(),
+    phone:         document.getElementById('mLPhone').value.trim(),
+    display_order: parseInt(document.getElementById('mLOrder').value) || 1,
+    photo_url:     document.getElementById('mLPhoto').value.trim()
+  };
+  if (!row.name) { showToast('Name is required.', 'error'); return; }
+  const { error } = id
+    ? await dbUpdate('leadership', id, row)
+    : await dbInsert('leadership', row);
+  if (error) { showToast('Error: ' + error.message, 'error'); console.error(error); return; }
+  closeModal();
+  showToast(id ? 'Member updated ✓' : 'Member added ✓', 'success');
+  renderLeadership();
+}
+
 
 /* ══════════════════════════════════════════════════
    MESSAGES

@@ -62,6 +62,8 @@ async function renderLeadership() {
         <div class="leader-role">${l.role || ''}</div>
         <div class="leader-name">${l.name}</div>
         <div class="leader-city">${l.city || ''}</div>
+        ${l.phone ? `<a href="tel:${l.phone}" class="leader-phone">📞 ${l.phone}</a>` : ""}
+
       </div>
     </div>
   `).join('');
